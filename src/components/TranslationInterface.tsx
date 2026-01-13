@@ -1,31 +1,34 @@
 import { useState } from 'react';
 import { ArrowLeft, BookOpen, Settings, ChevronUp } from 'lucide-react';
 import { SentenceItem } from './SentenceItem';
-import type { Project } from '../App';
+import type { Project, Sentence } from '../types/translation';
 
 interface TranslationInterfaceProps {
   project: Project;
+  sentences: Sentence[];
   onBack: () => void;
-  onUpdateProject: (project: Project) => void;
+  onUpdateSentences: (sentences: Sentence[]) => void;
 }
 
-export function TranslationInterface({ project, onBack, onUpdateProject }: TranslationInterfaceProps) {
+export function TranslationInterface({
+  project,
+  sentences,
+  onBack,
+  onUpdateSentences,
+}: TranslationInterfaceProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const handleUpdateSentence = (sentenceId: string, translation: string, isComplete?: boolean) => {
-    const updatedSentences = project.sentences.map(sentence =>
+    const updatedSentences = sentences.map(sentence =>
       sentence.id === sentenceId 
         ? { ...sentence, translation, isComplete: isComplete ?? sentence.isComplete } 
         : sentence
     );
 
-    onUpdateProject({
-      ...project,
-      sentences: updatedSentences,
-    });
+    onUpdateSentences(updatedSentences);
   };
 
-  const completedSentences = project.sentences.filter(s => s.isComplete);
+  const completedSentences = sentences.filter(s => s.isComplete);
   const consolidatedText = completedSentences
     .map(s => s.translation)
     .filter(Boolean)
@@ -60,7 +63,7 @@ export function TranslationInterface({ project, onBack, onUpdateProject }: Trans
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="space-y-6">
-          {project.sentences.map((sentence, index) => (
+          {sentences.map((sentence, index) => (
             <SentenceItem
               key={sentence.id}
               sentence={sentence}

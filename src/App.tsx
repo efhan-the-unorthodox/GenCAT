@@ -1,47 +1,115 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Home } from './components/Home';
 import { TranslationInterface } from './components/TranslationInterface';
 import { AllProjects } from './components/AllProjects';
+import { TranslationService } from './services/TranslationService';
+import { loadProjects, loadSegments, saveProjects, saveSegments } from './services/projectStorage';
+import type { NewProjectPayload, Project, Sentence } from './types/translation';
 
-export interface Project {
-  id: string;
-  name: string;
-  sourceLanguage: string;
-  destinationLanguage: string;
-  documentName?: string;
-  termBaseName?: string;
-  lastEdit: string;
-  sentences: Array<{
-    id: string;
-    sourceText: string;
-    translation?: string;
-    isComplete?: boolean;
-  }>;
-}
+const translationService = new TranslationService();
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'home' | 'translation' | 'allProjects'>('home');
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [currentSentences, setCurrentSentences] = useState<Sentence[]>([]);
+  const [projects, setProjects] = useState<Project[]>(() => loadProjects());
+  const [segmentsByProjectId, setSegmentsByProjectId] = useState<Record<string, Sentence[]>>({});
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
 
-  const handleCreateProject = (project: Project) => {
-    setProjects([...projects, project]);
+  useEffect(() => {
+    setSegmentsByProjectId((prev) => {
+      const next = { ...prev };
+      projects.forEach((project) => {
+        if (!next[project.id]) {
+          next[project.id] = loadSegments(project);
+        }
+      });
+      return next;
+    });
+  }, [projects]);
+
+  const projectStats = useMemo(() => {
+    return projects.reduce<Record<string, { total: number; translated: number }>>((acc, project) => {
+      const sentences = segmentsByProjectId[project.id] ?? [];
+      const translated = sentences.filter((sentence) => sentence.translation).length;
+      acc[project.id] = { total: sentences.length, translated };
+      return acc;
+    }, {});
+  }, [projects, segmentsByProjectId]);
+
+  const handleCreateProject = async (payload: NewProjectPayload) => {
+    setIsCreatingProject(true);
+    try {
+      const now = new Date();
+      const newProject: Project = {
+        id: Date.now().toString(),
+        name: payload.name.trim(),
+        dateCreated: now.toISOString(),
+        sourceLanguage: payload.sourceLanguage,
+        destinationLanguage: payload.destinationLanguage,
+        documentName: payload.document.name,
+        termBaseName: payload.termBase?.name,
+        lastEdit: now.toISOString(),
+      };
+
+      const sentences = await translationService.requestTranslation({
+        document: payload.document,
+        sourceLanguage: payload.sourceLanguage,
+        destinationLanguage: payload.destinationLanguage,
+        termBase: payload.termBase,
+      });
+
+      const updatedProjects = [...projects, newProject];
+      setProjects(updatedProjects);
+      saveProjects(updatedProjects);
+      saveSegments(newProject, sentences);
+      setSegmentsByProjectId((prev) => ({ ...prev, [newProject.id]: sentences }));
+      setCurrentProject(newProject);
+      setCurrentSentences(sentences);
+      setCurrentView('translation');
+    } finally {
+      setIsCreatingProject(false);
+    }
+  };
+
+  const handleUpdateSentences = (sentences: Sentence[]) => {
+    if (!currentProject) {
+      return;
+    }
+
+    const updatedProject = {
+      ...currentProject,
+      lastEdit: new Date().toISOString(),
+    };
+
+    const updatedProjects = projects.map((project) =>
+      project.id === updatedProject.id ? updatedProject : project,
+    );
+
+    setCurrentProject(updatedProject);
+    setProjects(updatedProjects);
+    saveProjects(updatedProjects);
+
+    setCurrentSentences(sentences);
+    setSegmentsByProjectId((prev) => ({ ...prev, [updatedProject.id]: sentences }));
+    saveSegments(updatedProject, sentences);
+  };
+
+  const handleSelectProject = (project: Project) => {
+    const storedSentences = segmentsByProjectId[project.id] ?? loadSegments(project);
     setCurrentProject(project);
+    setCurrentSentences(storedSentences);
     setCurrentView('translation');
   };
 
   const handleBackToHome = () => {
     setCurrentView('home');
     setCurrentProject(null);
+    setCurrentSentences([]);
   };
 
   const handleViewAllProjects = () => {
     setCurrentView('allProjects');
-  };
-
-  const handleSelectProject = (project: Project) => {
-    setCurrentProject(project);
-    setCurrentView('translation');
   };
 
   return (
@@ -51,11 +119,13 @@ export default function App() {
           onCreateProject={handleCreateProject}
           onViewAllProjects={handleViewAllProjects}
           projects={projects}
+          isCreatingProject={isCreatingProject}
         />
       )}
       {currentView === 'allProjects' && (
         <AllProjects
           projects={projects}
+          projectStats={projectStats}
           onBack={handleBackToHome}
           onSelectProject={handleSelectProject}
         />
@@ -63,13 +133,9 @@ export default function App() {
       {currentView === 'translation' && currentProject && (
         <TranslationInterface 
           project={currentProject}
+          sentences={currentSentences}
           onBack={handleBackToHome}
-          onUpdateProject={(updatedProject) => {
-            setCurrentProject(updatedProject);
-            setProjects(projects.map(p => 
-              p.id === updatedProject.id ? updatedProject : p
-            ));
-          }}
+          onUpdateSentences={handleUpdateSentences}
         />
       )}
     </div>

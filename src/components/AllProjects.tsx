@@ -1,13 +1,14 @@
 import { ArrowLeft, FileText, Clock } from 'lucide-react';
-import type { Project } from '../App';
+import type { Project } from '../types/translation';
 
 interface AllProjectsProps {
   projects: Project[];
+  projectStats: Record<string, { total: number; translated: number }>;
   onBack: () => void;
   onSelectProject: (project: Project) => void;
 }
 
-export function AllProjects({ projects, onBack, onSelectProject }: AllProjectsProps) {
+export function AllProjects({ projects, projectStats, onBack, onSelectProject }: AllProjectsProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -53,56 +54,61 @@ export function AllProjects({ projects, onBack, onSelectProject }: AllProjectsPr
           </div>
         ) : (
           <div className="grid gap-4">
-            {projects.map((project) => (
-              <button
-                key={project.id}
-                onClick={() => onSelectProject(project)}
-                className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-[#29bafe] transition-all p-6 text-left group"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-xl mb-2 group-hover:text-[#29bafe] transition-colors">
-                      {project.name}
-                    </h3>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span className="flex items-center gap-1">
-                        <span className="font-medium">{project.sourceLanguage}</span>
-                        <span>→</span>
-                        <span className="font-medium">{project.destinationLanguage}</span>
-                      </span>
-                      {project.documentName && (
+            {projects.map((project) => {
+              const stats = projectStats[project.id] ?? { total: 0, translated: 0 };
+              const progressPercent = stats.total === 0 ? 0 : (stats.translated / stats.total) * 100;
+
+              return (
+                <button
+                  key={project.id}
+                  onClick={() => onSelectProject(project)}
+                  className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-[#29bafe] transition-all p-6 text-left group"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-xl mb-2 group-hover:text-[#29bafe] transition-colors">
+                        {project.name}
+                      </h3>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
                         <span className="flex items-center gap-1">
-                          <FileText className="w-4 h-4" />
-                          {project.documentName}
+                          <span className="font-medium">{project.sourceLanguage}</span>
+                          <span>→</span>
+                          <span className="font-medium">{project.destinationLanguage}</span>
                         </span>
-                      )}
+                        {project.documentName && (
+                          <span className="flex items-center gap-1">
+                            <FileText className="w-4 h-4" />
+                            {project.documentName}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Clock className="w-4 h-4" />
+                      <span>Last edited {formatDate(project.lastEdit)}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Clock className="w-4 h-4" />
-                    <span>Last edited {formatDate(project.lastEdit)}</span>
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">
+                        {stats.total} sentence{stats.total === 1 ? '' : 's'}
+                      </span>
+                      <span className="text-gray-600">
+                        {stats.translated} translated
+                      </span>
+                    </div>
+                    <div className="mt-2 bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div 
+                        className="bg-[#29bafe] h-full transition-all"
+                        style={{ 
+                          width: `${progressPercent}%` 
+                        }}
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">
-                      {project.sentences.length} sentence{project.sentences.length === 1 ? '' : 's'}
-                    </span>
-                    <span className="text-gray-600">
-                      {project.sentences.filter(s => s.translation).length} translated
-                    </span>
-                  </div>
-                  <div className="mt-2 bg-gray-200 rounded-full h-2 overflow-hidden">
-                    <div 
-                      className="bg-[#29bafe] h-full transition-all"
-                      style={{ 
-                        width: `${(project.sentences.filter(s => s.translation).length / project.sentences.length) * 100}%` 
-                      }}
-                    />
-                  </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

@@ -1,13 +1,7 @@
 import { useState, useRef } from 'react';
 import { ChevronDown, ChevronRight, Check, Sparkles, RefreshCw } from 'lucide-react';
 import { SegmentSelector } from './SegmentSelector';
-
-interface Sentence {
-  id: string;
-  sourceText: string;
-  translation?: string;
-  isComplete?: boolean;
-}
+import type { Sentence } from '../types/translation';
 
 interface SentenceItemProps {
   sentence: Sentence;

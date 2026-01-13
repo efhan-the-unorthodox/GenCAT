@@ -1,14 +1,22 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X, Upload } from 'lucide-react';
-import type { Project } from '../App';
+import type { NewProjectPayload, Project } from '../types/translation';
 
 interface NewProjectDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateProject: (project: Project) => void;
+  onCreateProject: (project: NewProjectPayload) => Promise<void>;
+  existingProjects: Project[];
+  isSubmitting: boolean;
 }
 
-export function NewProjectDialog({ isOpen, onClose, onCreateProject }: NewProjectDialogProps) {
+export function NewProjectDialog({
+  isOpen,
+  onClose,
+  onCreateProject,
+  existingProjects,
+  isSubmitting,
+}: NewProjectDialogProps) {
   const [projectName, setProjectName] = useState('');
   const [sourceLanguage, setSourceLanguage] = useState('English');
   const [destinationLanguage, setDestinationLanguage] = useState('Chinese (Simplified)');
@@ -21,54 +29,65 @@ export function NewProjectDialog({ isOpen, onClose, onCreateProject }: NewProjec
   const termBaseInputRef = useRef<HTMLInputElement>(null);
   const projectLocationInputRef = useRef<HTMLInputElement>(null);
 
+  const [submissionError, setSubmissionError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setSubmissionError('');
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
+  const normalizedName = projectName.trim();
+  const isDuplicateName = existingProjects.some(
+    (project) => project.name.trim().toLowerCase() === normalizedName.toLowerCase(),
+  );
+
   const isFormValid = Boolean(
-    projectName.trim()
+    normalizedName
       && sourceLanguage
       && destinationLanguage
       && document
       && projectLocation
-      && projectFolderName,
+      && projectFolderName
+      && !isDuplicateName,
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmissionError('');
 
     if (!isFormValid) {
       return;
     }
+    if (!document) {
+      return;
+    }
 
-    // Mock sentences for demo purposes
-    const mockSentences = [
-      { id: '1', sourceText: 'Systematic reviews indicate that several weeks of mindfulness meditation interventions can significantly improve sleep quality.' },
-      { id: '2', sourceText: 'The research demonstrates consistent benefits across different populations.' },
-      { id: '3', sourceText: 'Participants who practiced mindfulness meditation showed improved sleep patterns.' },
-      { id: '4', sourceText: 'These findings suggest that mindfulness meditation could be an effective non-pharmaceutical intervention.' },
-      { id: '5', sourceText: 'Future studies should explore the long-term effects of sustained meditation practice.' },
-    ];
+    try {
+      await onCreateProject({
+        name: normalizedName,
+        sourceLanguage,
+        destinationLanguage,
+        document,
+        termBase,
+      });
 
-    const newProject: Project = {
-      id: Date.now().toString(),
-      name: projectName,
-      sourceLanguage,
-      destinationLanguage,
-      documentName: document?.name,
-      termBaseName: termBase?.name,
-      lastEdit: new Date().toISOString(),
-      sentences: mockSentences,
-    };
-
-    onCreateProject(newProject);
-    
-    // Reset form
-    setProjectName('');
-    setSourceLanguage('English');
-    setDestinationLanguage('Chinese (Simplified)');
-    setDocument(null);
-    setTermBase(null);
-    setProjectLocation(null);
-    setProjectFolderName('');
+      // Reset form
+      setProjectName('');
+      setSourceLanguage('English');
+      setDestinationLanguage('Chinese (Simplified)');
+      setDocument(null);
+      setTermBase(null);
+      setProjectLocation(null);
+      setProjectFolderName('');
+      onClose();
+    } catch (error) {
+      setSubmissionError('Failed to create project. Please try again.');
+      // eslint-disable-next-line no-console
+      console.error('Failed to create project', error);
+    }
   };
 
   const isValidDocument = (file: File) =>
@@ -142,6 +161,11 @@ export function NewProjectDialog({ isOpen, onClose, onCreateProject }: NewProjec
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#29bafe] focus:border-[#29bafe] outline-none"
               required
             />
+            {isDuplicateName && (
+              <p className="mt-2 text-sm text-red-500">
+                A project with this name already exists. Please choose a different name.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -285,11 +309,14 @@ export function NewProjectDialog({ isOpen, onClose, onCreateProject }: NewProjec
             <button
               type="submit"
               className="px-6 py-2 bg-[#29bafe] text-white rounded-lg hover:bg-[#1da8ee] transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
-              disabled={!isFormValid}
+              disabled={!isFormValid || isSubmitting}
             >
-              Create Project
+              {isSubmitting ? 'Creating...' : 'Create Project'}
             </button>
           </div>
+          {submissionError && (
+            <p className="text-sm text-red-500">{submissionError}</p>
+          )}
         </form>
       </div>
     </div>

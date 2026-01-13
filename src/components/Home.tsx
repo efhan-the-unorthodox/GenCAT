@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { NewProjectDialog } from './NewProjectDialog';
 import { FileText, FolderOpen } from 'lucide-react';
-import type { Project } from '../App';
+import type { NewProjectPayload, Project } from '../types/translation';
 
 interface HomeProps {
-  onCreateProject: (project: Project) => void;
+  onCreateProject: (project: NewProjectPayload) => Promise<void>;
   onViewAllProjects: () => void;
   projects: Project[];
+  isCreatingProject: boolean;
 }
 
-export function Home({ onCreateProject, onViewAllProjects, projects }: HomeProps) {
+export function Home({ onCreateProject, onViewAllProjects, projects, isCreatingProject }: HomeProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
@@ -47,6 +48,8 @@ export function Home({ onCreateProject, onViewAllProjects, projects }: HomeProps
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         onCreateProject={onCreateProject}
+        existingProjects={projects}
+        isSubmitting={isCreatingProject}
       />
     </div>
   );
