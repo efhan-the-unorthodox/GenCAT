@@ -14,14 +14,30 @@ export function NewProjectDialog({ isOpen, onClose, onCreateProject }: NewProjec
   const [destinationLanguage, setDestinationLanguage] = useState('Chinese (Simplified)');
   const [document, setDocument] = useState<File | null>(null);
   const [termBase, setTermBase] = useState<File | null>(null);
+  const [projectLocation, setProjectLocation] = useState<FileList | null>(null);
+  const [projectFolderName, setProjectFolderName] = useState('');
 
   const documentInputRef = useRef<HTMLInputElement>(null);
   const termBaseInputRef = useRef<HTMLInputElement>(null);
+  const projectLocationInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
+  const isFormValid = Boolean(
+    projectName.trim()
+      && sourceLanguage
+      && destinationLanguage
+      && document
+      && projectLocation
+      && projectFolderName,
+  );
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isFormValid) {
+      return;
+    }
 
     // Mock sentences for demo purposes
     const mockSentences = [
@@ -51,13 +67,32 @@ export function NewProjectDialog({ isOpen, onClose, onCreateProject }: NewProjec
     setDestinationLanguage('Chinese (Simplified)');
     setDocument(null);
     setTermBase(null);
+    setProjectLocation(null);
+    setProjectFolderName('');
   };
+
+  const isValidDocument = (file: File) =>
+    file.name.endsWith('.txt') || file.name.endsWith('.pdf') || file.name.endsWith('.docx');
 
   const handleDocumentDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
-    if (file && (file.name.endsWith('.txt') || file.name.endsWith('.pdf') || file.name.endsWith('.docx'))) {
+    if (file && isValidDocument(file)) {
       setDocument(file);
+    }
+  };
+
+  const handleDocumentChange = (files: FileList | null) => {
+    if (!files || files.length === 0) {
+      setDocument(null);
+      return;
+    }
+
+    const file = files[0];
+    if (isValidDocument(file)) {
+      setDocument(file);
+    } else {
+      setDocument(null);
     }
   };
 
@@ -69,8 +104,21 @@ export function NewProjectDialog({ isOpen, onClose, onCreateProject }: NewProjec
     }
   };
 
+  const handleProjectLocationChange = (files: FileList | null) => {
+    if (!files || files.length === 0) {
+      setProjectLocation(null);
+      setProjectFolderName('');
+      return;
+    }
+
+    const relativePath = files[0].webkitRelativePath;
+    const folderName = relativePath ? relativePath.split('/')[0] : '';
+    setProjectLocation(files);
+    setProjectFolderName(folderName);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
           <h2 className="text-2xl">New Project</h2>
@@ -153,11 +201,44 @@ export function NewProjectDialog({ isOpen, onClose, onCreateProject }: NewProjec
                 ref={documentInputRef}
                 type="file"
                 accept=".txt,.pdf,.docx"
-                onChange={(e) => setDocument(e.target.files?.[0] || null)}
+                onChange={(e) => handleDocumentChange(e.target.files)}
                 className="hidden"
                 required
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm mb-2">
+              Project Location <span className="text-red-500">*</span>
+            </label>
+            <div
+              className="border border-gray-300 rounded-lg px-4 py-2 flex items-center justify-between gap-4"
+            >
+              <span className={projectFolderName ? 'text-sm text-gray-800' : 'text-sm text-gray-400'}>
+                {projectFolderName || 'Select a folder to save your project'}
+              </span>
+              <button
+                type="button"
+                onClick={() => projectLocationInputRef.current?.click()}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Browse
+              </button>
+              <input
+                ref={projectLocationInputRef}
+                type="file"
+                onChange={(e) => handleProjectLocationChange(e.target.files)}
+                className="hidden"
+                // @ts-expect-error -- non-standard attributes for folder selection
+                webkitdirectory="true"
+                directory="true"
+                required
+              />
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Choose a folder where your translation work and data will be stored.
+            </p>
           </div>
 
           <div>
@@ -203,7 +284,8 @@ export function NewProjectDialog({ isOpen, onClose, onCreateProject }: NewProjec
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-[#29bafe] text-white rounded-lg hover:bg-[#1da8ee] transition-colors"
+              className="px-6 py-2 bg-[#29bafe] text-white rounded-lg hover:bg-[#1da8ee] transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+              disabled={!isFormValid}
             >
               Create Project
             </button>
