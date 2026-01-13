@@ -1,16 +1,23 @@
 import { useState } from 'react';
 import { NewProjectDialog } from './NewProjectDialog';
-import { FileText, FolderOpen } from 'lucide-react';
+import { FileText, FolderOpen, Settings } from 'lucide-react';
 import type { NewProjectPayload, Project } from '../types/translation';
 
 interface HomeProps {
   onCreateProject: (project: NewProjectPayload) => Promise<void>;
   onViewAllProjects: () => void;
+  onViewSettings: () => void;
   projects: Project[];
   isCreatingProject: boolean;
 }
 
-export function Home({ onCreateProject, onViewAllProjects, projects, isCreatingProject }: HomeProps) {
+export function Home({
+  onCreateProject,
+  onViewAllProjects,
+  onViewSettings,
+  projects,
+  isCreatingProject,
+}: HomeProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
@@ -41,6 +48,14 @@ export function Home({ onCreateProject, onViewAllProjects, projects, isCreatingP
               {projects.length}
             </span>
           )}
+        </button>
+
+        <button
+          onClick={onViewSettings}
+          className="flex items-center justify-center gap-3 bg-white text-gray-700 px-8 py-4 rounded-lg border-2 border-gray-300 hover:border-[#29bafe] hover:text-[#29bafe] transition-colors shadow-md"
+        >
+          <Settings className="w-5 h-5" />
+          Settings
         </button>
       </div>
 

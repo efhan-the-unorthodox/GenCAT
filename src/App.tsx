@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Home } from './components/Home';
 import { TranslationInterface } from './components/TranslationInterface';
 import { AllProjects } from './components/AllProjects';
+import { Settings } from './components/Settings';
 import { TranslationService } from './services/TranslationService';
 import { loadProjects, loadSegments, saveProjects, saveSegments } from './services/projectStorage';
 import type { NewProjectPayload, Project, Sentence } from './types/translation';
@@ -9,7 +10,9 @@ import type { NewProjectPayload, Project, Sentence } from './types/translation';
 const translationService = new TranslationService();
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'home' | 'translation' | 'allProjects'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'translation' | 'allProjects' | 'settings'>(
+    'home',
+  );
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [currentSentences, setCurrentSentences] = useState<Sentence[]>([]);
   const [projects, setProjects] = useState<Project[]>(() => loadProjects());
@@ -112,12 +115,17 @@ export default function App() {
     setCurrentView('allProjects');
   };
 
+  const handleViewSettings = () => {
+    setCurrentView('settings');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50">
       {currentView === 'home' && (
         <Home 
           onCreateProject={handleCreateProject}
           onViewAllProjects={handleViewAllProjects}
+          onViewSettings={handleViewSettings}
           projects={projects}
           isCreatingProject={isCreatingProject}
         />
@@ -129,6 +137,9 @@ export default function App() {
           onBack={handleBackToHome}
           onSelectProject={handleSelectProject}
         />
+      )}
+      {currentView === 'settings' && (
+        <Settings onBack={handleBackToHome} />
       )}
       {currentView === 'translation' && currentProject && (
         <TranslationInterface 
