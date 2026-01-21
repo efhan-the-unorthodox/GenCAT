@@ -1,9 +1,19 @@
 export interface Sentence {
-  id: string;
+  id: number;
   sourceText: string;
   translation?: string;
   isComplete?: boolean;
 }
+
+export interface LanguageOption {
+  code: string;
+  label: string;
+}
+
+export const LANGUAGE_OPTIONS: LanguageOption[] = [
+  { code: 'en', label: 'English' },
+  { code: 'zh-CN', label: 'Chinese (Simplified)' },
+];
 
 export interface Project {
   id: string;

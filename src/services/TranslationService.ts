@@ -1,11 +1,9 @@
-import axios, { type AxiosInstance } from 'axios';
-import type { Sentence } from '../types/translation';
+import axios, { type AxiosInstance } from "axios";
+import type { Sentence, Project } from "../types/translation";
 
-interface TranslationRequest {
+interface TextPreprocessingRequest {
   document: File;
-  sourceLanguage: string;
-  destinationLanguage: string;
-  termBase?: File | null;
+  project: Project;
 }
 
 export class TranslationService {
@@ -13,31 +11,38 @@ export class TranslationService {
 
   constructor() {
     this.client = axios.create({
-      baseURL: import.meta.env.VITE_TRANSLATION_API_BASE_URL ?? '',
+      baseURL:
+        import.meta.env.VITE_TRANSLATION_API_BASE_URL ??
+        "http://127.0.0.1:8000",
     });
   }
 
-  async requestTranslation({
+  async textPreprocessing({
     document,
-    sourceLanguage,
-    destinationLanguage,
-    termBase,
-  }: TranslationRequest): Promise<Sentence[]> {
+    project,
+  }: TextPreprocessingRequest): Promise<Sentence[]> {
     const formData = new FormData();
-    formData.append('file', document);
-    formData.append('sourceLanguage', sourceLanguage);
-    formData.append('destinationLanguage', destinationLanguage);
-    if (termBase) {
-      formData.append('termBase', termBase);
-    }
+    formData.append("file", document);
+    formData.append("project_id", project.id);
+    formData.append("projectName", project.name);
+    formData.append("source_lang", project.sourceLanguage);
+    formData.append("dest_lang", project.destinationLanguage);
+    formData.append("documentName", project.documentName);
+    formData.append("dateCreated", project.dateCreated);
 
-    const endpoint = import.meta.env.VITE_TRANSLATION_ENDPOINT ?? '/translations';
+    const endpoint = "/preprocessing";
     const response = await this.client.post<Sentence[]>(endpoint, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
 
+    return response.data;
+  }
+
+  async requestTranslation(sentence: string): Promise<Sentence[]> {
+    const endpoint = "/translations";
+    const response = await this.client.post<Sentence[]>(endpoint, { sentence });
     return response.data;
   }
 }

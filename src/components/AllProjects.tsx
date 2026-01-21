@@ -1,14 +1,16 @@
-import { ArrowLeft, FileText, Clock } from 'lucide-react';
+import { ArrowLeft, FileText, Clock, Loader2, AlertCircle } from 'lucide-react';
 import type { Project } from '../types/translation';
 
 interface AllProjectsProps {
   projects: Project[];
-  projectStats: Record<string, { total: number; translated: number }>;
   onBack: () => void;
   onSelectProject: (project: Project) => void;
+  isLoading: boolean;
+  error: string | null;
+  onRetry: () => void;
 }
 
-export function AllProjects({ projects, projectStats, onBack, onSelectProject }: AllProjectsProps) {
+export function AllProjects({ projects, onBack, onSelectProject, isLoading, error, onRetry }: AllProjectsProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -46,7 +48,23 @@ export function AllProjects({ projects, projectStats, onBack, onSelectProject }:
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
-        {projects.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="w-12 h-12 text-[#29bafe] animate-spin mb-4" />
+            <p className="text-gray-500">Loading projects...</p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <AlertCircle className="w-16 h-16 text-red-400 mb-4" />
+            <p className="text-gray-700 text-lg mb-4">{error}</p>
+            <button
+              onClick={onRetry}
+              className="px-4 py-2 bg-[#29bafe] text-white rounded-lg hover:bg-[#1da8e9] transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        ) : projects.length === 0 ? (
           <div className="text-center py-16">
             <FileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
             <p className="text-gray-500 text-lg mb-2">No projects yet</p>
@@ -55,8 +73,6 @@ export function AllProjects({ projects, projectStats, onBack, onSelectProject }:
         ) : (
           <div className="grid gap-4">
             {projects.map((project) => {
-              const stats = projectStats[project.id] ?? { total: 0, translated: 0 };
-              const progressPercent = stats.total === 0 ? 0 : (stats.translated / stats.total) * 100;
 
               return (
                 <button
@@ -90,20 +106,14 @@ export function AllProjects({ projects, projectStats, onBack, onSelectProject }:
                   </div>
                   <div className="mt-4 pt-4 border-t border-gray-100">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">
-                        {stats.total} sentence{stats.total === 1 ? '' : 's'}
-                      </span>
-                      <span className="text-gray-600">
-                        {stats.translated} translated
-                      </span>
                     </div>
                     <div className="mt-2 bg-gray-200 rounded-full h-2 overflow-hidden">
-                      <div 
+                      {/* <div 
                         className="bg-[#29bafe] h-full transition-all"
                         style={{ 
                           width: `${progressPercent}%` 
                         }}
-                      />
+                      /> */}
                     </div>
                   </div>
                 </button>

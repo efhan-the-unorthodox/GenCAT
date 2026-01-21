@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { ArrowLeft, BookOpen, Settings, ChevronUp } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, BookOpen, ChevronUp } from 'lucide-react';
 import { SentenceItem } from './SentenceItem';
 import type { Project, Sentence } from '../types/translation';
+import { TranslationService } from '../services/TranslationService';
+import { ProjectService } from '../services/ProjectService';
 
 interface TranslationInterfaceProps {
   project: Project;
@@ -10,6 +12,8 @@ interface TranslationInterfaceProps {
   onUpdateSentences: (sentences: Sentence[]) => void;
 }
 
+const translationService = new TranslationService();
+const projectService = new ProjectService();
 export function TranslationInterface({
   project,
   sentences,
@@ -18,10 +22,16 @@ export function TranslationInterface({
 }: TranslationInterfaceProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const handleUpdateSentence = (sentenceId: string, translation: string, isComplete?: boolean) => {
+
+
+  useEffect(() => {
+    projectService.getSentences(project.id).then(a => console.log(a))
+  }, [])
+
+  const handleUpdateSentence = (sentenceId: number, translation: string, isComplete?: boolean) => {
     const updatedSentences = sentences.map(sentence =>
-      sentence.id === sentenceId 
-        ? { ...sentence, translation, isComplete: isComplete ?? sentence.isComplete } 
+      sentence.id === sentenceId
+        ? { ...sentence, translation, isComplete: isComplete ?? sentence.isComplete }
         : sentence
     );
 
@@ -54,9 +64,6 @@ export function TranslationInterface({
             <button className="p-2 border border-gray-300 rounded-lg hover:border-[#29bafe] hover:text-[#29bafe] transition-colors" title="Term Base">
               <BookOpen className="w-5 h-5" />
             </button>
-            <button className="p-2 bg-[#29bafe] text-white rounded-lg hover:bg-[#1da8ee] transition-colors" title="Settings">
-              <Settings className="w-5 h-5" />
-            </button>
           </div>
         </div>
       </div>
@@ -68,7 +75,7 @@ export function TranslationInterface({
               key={sentence.id}
               sentence={sentence}
               index={index + 1}
-              onUpdateTranslation={(translation, isComplete) => 
+              onUpdateTranslation={(translation, isComplete) =>
                 handleUpdateSentence(sentence.id, translation, isComplete)
               }
             />
@@ -77,10 +84,9 @@ export function TranslationInterface({
       </div>
 
       {/* Bottom Drawer */}
-      <div 
-        className={`fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg transition-transform duration-300 z-20 ${
-          isDrawerOpen ? 'translate-y-0' : 'translate-y-[calc(100%-3rem)]'
-        }`}
+      <div
+        className={`fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg transition-transform duration-300 z-20 ${isDrawerOpen ? 'translate-y-0' : 'translate-y-[calc(100%-3rem)]'
+          }`}
         style={{ maxHeight: '60vh' }}
       >
         <button
@@ -95,7 +101,7 @@ export function TranslationInterface({
               </span>
             )}
           </div>
-          <ChevronUp 
+          <ChevronUp
             className={`w-5 h-5 transition-transform ${isDrawerOpen ? 'rotate-180' : ''}`}
           />
         </button>

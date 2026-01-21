@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Upload } from 'lucide-react';
-import type { NewProjectPayload, Project } from '../types/translation';
+import { LANGUAGE_OPTIONS, type NewProjectPayload, type Project } from '../types/translation';
 
 interface NewProjectDialogProps {
   isOpen: boolean;
@@ -18,16 +18,13 @@ export function NewProjectDialog({
   isSubmitting,
 }: NewProjectDialogProps) {
   const [projectName, setProjectName] = useState('');
-  const [sourceLanguage, setSourceLanguage] = useState('English');
-  const [destinationLanguage, setDestinationLanguage] = useState('Chinese (Simplified)');
+  const [sourceLanguage, setSourceLanguage] = useState('en');
+  const [destinationLanguage, setDestinationLanguage] = useState('zh-CN');
   const [document, setDocument] = useState<File | null>(null);
   const [termBase, setTermBase] = useState<File | null>(null);
-  const [projectLocation, setProjectLocation] = useState<FileList | null>(null);
-  const [projectFolderName, setProjectFolderName] = useState('');
 
   const documentInputRef = useRef<HTMLInputElement>(null);
   const termBaseInputRef = useRef<HTMLInputElement>(null);
-  const projectLocationInputRef = useRef<HTMLInputElement>(null);
 
   const [submissionError, setSubmissionError] = useState('');
 
@@ -43,15 +40,15 @@ export function NewProjectDialog({
   const isDuplicateName = existingProjects.some(
     (project) => project.name.trim().toLowerCase() === normalizedName.toLowerCase(),
   );
+  const isSameLanguage = sourceLanguage === destinationLanguage;
 
   const isFormValid = Boolean(
     normalizedName
-      && sourceLanguage
-      && destinationLanguage
-      && document
-      && projectLocation
-      && projectFolderName
-      && !isDuplicateName,
+    && sourceLanguage
+    && destinationLanguage
+    && document
+    && !isSameLanguage
+    && !isDuplicateName,
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,15 +70,15 @@ export function NewProjectDialog({
         document,
         termBase,
       });
+      
+      console.log(normalizedName)
 
       // Reset form
       setProjectName('');
-      setSourceLanguage('English');
-      setDestinationLanguage('Chinese (Simplified)');
+      setSourceLanguage('en');
+      setDestinationLanguage('zh-CN');
       setDocument(null);
       setTermBase(null);
-      setProjectLocation(null);
-      setProjectFolderName('');
       onClose();
     } catch (error) {
       setSubmissionError('Failed to create project. Please try again.');
@@ -121,19 +118,6 @@ export function NewProjectDialog({
     if (file && file.name.endsWith('.csv')) {
       setTermBase(file);
     }
-  };
-
-  const handleProjectLocationChange = (files: FileList | null) => {
-    if (!files || files.length === 0) {
-      setProjectLocation(null);
-      setProjectFolderName('');
-      return;
-    }
-
-    const relativePath = files[0].webkitRelativePath;
-    const folderName = relativePath ? relativePath.split('/')[0] : '';
-    setProjectLocation(files);
-    setProjectFolderName(folderName);
   };
 
   return (
@@ -178,8 +162,11 @@ export function NewProjectDialog({
                 onChange={(e) => setSourceLanguage(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#29bafe] focus:border-[#29bafe] outline-none"
               >
-                <option value="English">English</option>
-                <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+                {LANGUAGE_OPTIONS.map((language) => (
+                  <option key={language.code} value={language.code}>
+                    {language.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -192,11 +179,20 @@ export function NewProjectDialog({
                 onChange={(e) => setDestinationLanguage(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#29bafe] focus:border-[#29bafe] outline-none"
               >
-                <option value="English">English</option>
-                <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+                {LANGUAGE_OPTIONS.map((language) => (
+                  <option key={language.code} value={language.code}>
+                    {language.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
+
+          {isSameLanguage && (
+            <p className="text-sm text-red-500">
+              Source and destination languages must be different.
+            </p>
+          )}
 
           <div>
             <label className="block text-sm mb-2">
@@ -230,39 +226,6 @@ export function NewProjectDialog({
                 required
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm mb-2">
-              Project Location <span className="text-red-500">*</span>
-            </label>
-            <div
-              className="border border-gray-300 rounded-lg px-4 py-2 flex items-center justify-between gap-4"
-            >
-              <span className={projectFolderName ? 'text-sm text-gray-800' : 'text-sm text-gray-400'}>
-                {projectFolderName || 'Select a folder to save your project'}
-              </span>
-              <button
-                type="button"
-                onClick={() => projectLocationInputRef.current?.click()}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Browse
-              </button>
-              <input
-                ref={projectLocationInputRef}
-                type="file"
-                onChange={(e) => handleProjectLocationChange(e.target.files)}
-                className="hidden"
-                // @ts-expect-error -- non-standard attributes for folder selection
-                webkitdirectory="true"
-                directory="true"
-                required
-              />
-            </div>
-            <p className="mt-2 text-xs text-gray-500">
-              Choose a folder where your translation work and data will be stored.
-            </p>
           </div>
 
           <div>
