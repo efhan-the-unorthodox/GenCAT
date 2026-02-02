@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance } from "axios";
-import type { Project, Sentence } from "../types/translation";
+import type { Project, LoadProjectResponse } from "../types/translation";
 
 export class ProjectService {
   private readonly client: AxiosInstance;
@@ -17,9 +17,9 @@ export class ProjectService {
     return response.data;
   }
 
-  async getSentences(id: string): Promise<Sentence[]> {
-    const response = await this.client.get<Sentence[]>("/sentences", {
-      params: { id: id },
+  async loadProject(id: string): Promise<LoadProjectResponse> {
+    const response = await this.client.post<LoadProjectResponse>("/load_project", {
+      project_id: id,
     });
     return response.data;
   }

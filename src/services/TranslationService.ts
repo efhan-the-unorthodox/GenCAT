@@ -1,5 +1,16 @@
 import axios, { type AxiosInstance } from "axios";
-import type { Sentence, Project } from "../types/translation";
+import type {
+  Sentence,
+  Project,
+  TranslationRequest,
+  TranslationResponse,
+  TranslationSuggestion,
+  Segment,
+  ChunkSentenceRequest,
+  ChunkSentenceResponse,
+  GenerateSegmentAlternativesRequest,
+  GenerateSegmentAlternativesResponse,
+} from "../types/translation";
 
 interface TextPreprocessingRequest {
   document: File;
@@ -44,5 +55,74 @@ export class TranslationService {
     const endpoint = "/translations";
     const response = await this.client.post<Sentence[]>(endpoint, { sentence });
     return response.data;
+  }
+
+  async generateTransSugg(
+    projectId: string,
+    inputSentence: string,
+    previousSentence?: string,
+    nextSentence?: string
+  ): Promise<TranslationSuggestion[]> {
+    const endpoint = "/translation";
+
+    const request: TranslationRequest = {
+      project_id: projectId,
+      input_sentence: inputSentence,
+      previous_sentence: previousSentence,
+      next_sentence: nextSentence,
+    };
+
+    const response = await this.client.post<TranslationResponse>(
+      endpoint,
+      request
+    );
+
+    // Transform backend response to frontend format with IDs
+    return response.data.suggestions.map((text, index) => ({
+      id: `suggestion-${Date.now()}-${index}`,
+      text: text,
+    }));
+  }
+
+  async chunkSentence(
+    translatedSentence: string,
+    language: string = "zh-CN"
+  ): Promise<Segment[]> {
+    const endpoint = "/chunk-sentence";
+
+    const request: ChunkSentenceRequest = {
+      translated_sentence: translatedSentence,
+      language: language,
+    };
+
+    const response = await this.client.post<ChunkSentenceResponse>(
+      endpoint,
+      request
+    );
+
+    return response.data.segments;
+  }
+
+  async generateSegmentAlternatives(
+    segmentText: string,
+    fullSentence: string,
+    position: number,
+    language: string = "zh-CN"
+  ): Promise<string[]> {
+    const endpoint = "/generate-segment-alternatives";
+
+    const request: GenerateSegmentAlternativesRequest = {
+      segment_text: segmentText,
+      full_sentence: fullSentence,
+      segment_position: position,
+      language: language,
+    };
+
+    const response = await this.client.post<GenerateSegmentAlternativesResponse>(
+      endpoint,
+      request
+    );
+
+    return response.data.alternatives;
   }
 }

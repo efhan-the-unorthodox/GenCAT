@@ -4,7 +4,7 @@ import { TranslationInterface } from './components/TranslationInterface';
 import { AllProjects } from './components/AllProjects';
 import { TranslationService } from './services/TranslationService';
 import { ProjectService } from './services/ProjectService';
-import type { NewProjectPayload, Project, Sentence } from './types/translation';
+import type { NewProjectPayload, Project } from './types/translation';
 
 const translationService = new TranslationService();
 const projectService = new ProjectService();
@@ -12,14 +12,10 @@ const projectService = new ProjectService();
 export default function App() {
   const [currentView, setCurrentView] = useState<'home' | 'translation' | 'allProjects'>('home');
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
-  const [currentSentences, setCurrentSentences] = useState<Sentence[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   const [projectsError, setProjectsError] = useState<string | null>(null);
-
-  // map of project id to stored sentences for that project
-  const [segmentsByProjectId, setSegmentsByProjectId] = useState<Record<string, Sentence[]>>({});
 
   const fetchProjects = useCallback(async () => {
     setIsLoadingProjects(true);
@@ -54,39 +50,26 @@ export default function App() {
         termBaseName: payload.termBase?.name,
         lastEdit: now.toISOString(),
       };
-      const sentences = await translationService.textPreprocessing({
+      await translationService.textPreprocessing({
         document: payload.document,
         project: newProject
       });
 
       setCurrentProject(newProject);
-      setCurrentSentences(sentences);
       setCurrentView('translation');
     } finally {
       setIsCreatingProject(false);
     }
   };
 
-  const handleUpdateSentences = (sentences: Sentence[]) => {
-    if (!currentProject) {
-      return;
-    }
-
-    setCurrentSentences(sentences);
-    setSegmentsByProjectId((prev) => ({ ...prev, [currentProject.id]: sentences }));
-  };
-
   const handleSelectProject = (project: Project) => {
-    const storedSentences = segmentsByProjectId[project.id] ?? [];
     setCurrentProject(project);
-    setCurrentSentences(storedSentences);
     setCurrentView('translation');
   };
 
   const handleBackToHome = () => {
     setCurrentView('home');
     setCurrentProject(null);
-    setCurrentSentences([]);
   };
 
   const handleViewAllProjects = () => {
@@ -116,9 +99,7 @@ export default function App() {
       {currentView === 'translation' && currentProject && (
         <TranslationInterface
           project={currentProject}
-          sentences={currentSentences}
           onBack={handleBackToHome}
-          onUpdateSentences={handleUpdateSentences}
         />
       )}
     </div>

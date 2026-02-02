@@ -1,32 +1,41 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BookOpen, ChevronUp } from 'lucide-react';
+import { AlertCircle, ArrowLeft, BookOpen, ChevronUp, Loader2 } from 'lucide-react';
 import { SentenceItem } from './SentenceItem';
 import type { Project, Sentence } from '../types/translation';
-import { TranslationService } from '../services/TranslationService';
 import { ProjectService } from '../services/ProjectService';
 
 interface TranslationInterfaceProps {
   project: Project;
-  sentences: Sentence[];
   onBack: () => void;
-  onUpdateSentences: (sentences: Sentence[]) => void;
 }
 
-const translationService = new TranslationService();
 const projectService = new ProjectService();
 export function TranslationInterface({
   project,
-  sentences,
   onBack,
-  onUpdateSentences,
 }: TranslationInterfaceProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [sentences, setSentences] = useState<Sentence[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-
+  const fetchSentences = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await projectService.loadProject(project.id);
+      setSentences(data.sentences);
+    } catch (err) {
+      setError('Failed to load project');
+      setSentences([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    projectService.getSentences(project.id).then(a => console.log(a))
-  }, [])
+    fetchSentences();
+  }, [project.id]);
 
   const handleUpdateSentence = (sentenceId: number, translation: string, isComplete?: boolean) => {
     const updatedSentences = sentences.map(sentence =>
@@ -35,7 +44,7 @@ export function TranslationInterface({
         : sentence
     );
 
-    onUpdateSentences(updatedSentences);
+    setSentences(updatedSentences);
   };
 
   const completedSentences = sentences.filter(s => s.isComplete);
@@ -69,18 +78,44 @@ export function TranslationInterface({
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="space-y-6">
-          {sentences.map((sentence, index) => (
-            <SentenceItem
-              key={sentence.id}
-              sentence={sentence}
-              index={index + 1}
-              onUpdateTranslation={(translation, isComplete) =>
-                handleUpdateSentence(sentence.id, translation, isComplete)
-              }
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="w-12 h-12 text-[#29bafe] animate-spin mb-4" />
+            <p className="text-gray-500">Loading sentences...</p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <AlertCircle className="w-16 h-16 text-red-400 mb-4" />
+            <p className="text-gray-700 text-lg mb-4">{error}</p>
+            <button
+              onClick={fetchSentences}
+              className="px-4 py-2 bg-[#29bafe] text-white rounded-lg hover:bg-[#1da8e9] transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        ) : sentences.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-gray-500 text-lg mb-2">No sentences yet</p>
+            <p className="text-gray-400 text-sm">Sentences will appear here once they are available.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {sentences.map((sentence, index) => (
+              <SentenceItem
+                key={sentence.id}
+                sentence={sentence}
+                index={index + 1}
+                onUpdateTranslation={(translation, isComplete) =>
+                  handleUpdateSentence(sentence.id, translation, isComplete)
+                }
+                projectId={project.id}
+                allSentences={sentences}
+                destinationLanguage={project.destinationLanguage}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Bottom Drawer */}

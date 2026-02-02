@@ -21,8 +21,13 @@ export function Home({
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
       <div className="text-center mb-12">
-        <h1 className="text-6xl mb-2">Fanee</h1>
-        <p className="text-gray-600">Computer Assisted Translation Tool utilizing a Search-Based Approach with LLMs
+        <img src="/GenCAT Logo.png" alt="GenCAT" className="h-16 sm:h-20 md:h-24 lg:h-28 mx-auto mb-4" />
+        {/* <p className="text-gray-600">Computer Assisted Translation (CAT) utilizing a Generative Search-Based Paradigm made possible with LLMs
+        </p> */}
+        <h2 className="text-black-600">A Generative Search-Based Paradigm Computer Assisted Translation Tool.
+        </h2>
+        <p>
+          Human made, AI powered, Designed for Human-AI collatboration.
         </p>
       </div>
 

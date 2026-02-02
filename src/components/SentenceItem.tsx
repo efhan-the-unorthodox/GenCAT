@@ -1,12 +1,16 @@
 import { useState, useRef } from 'react';
-import { ChevronDown, ChevronRight, Check, Sparkles, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronRight, Check, Sparkles, RefreshCw, Loader2, X } from 'lucide-react';
 import { SegmentSelector } from './SegmentSelector';
+import { TranslationService } from '../services/TranslationService';
 import type { Sentence } from '../types/translation';
 
 interface SentenceItemProps {
   sentence: Sentence;
   index: number;
   onUpdateTranslation: (translation: string, isComplete?: boolean) => void;
+  projectId: string;
+  allSentences: Sentence[];
+  destinationLanguage: string;
 }
 
 interface Suggestion {
@@ -14,35 +18,78 @@ interface Suggestion {
   text: string;
 }
 
-export function SentenceItem({ sentence, index, onUpdateTranslation }: SentenceItemProps) {
+export function SentenceItem({ sentence, index, onUpdateTranslation, projectId, allSentences, destinationLanguage }: SentenceItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [translation, setTranslation] = useState(sentence.translation || '');
   const [showSegmentSelector, setShowSegmentSelector] = useState(false);
+  const [segmentChunkKey, setSegmentChunkKey] = useState(0);
   const [showSentenceSuggestions, setShowSentenceSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [selectedText, setSelectedText] = useState('');
   const [selectionPosition, setSelectionPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const sourceTextAreaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Mock AI suggestions for initial generation
-  const generateInitialSuggestions = () => {
-    const mockSuggestions: Suggestion[] = [
-      { id: '1', text: '系统性评估表明，数周的正念冥想干预可以显著改善睡眠质量。' },
-      { id: '2', text: '系统性审查显示，进行几周的正念冥想干预能够明显提升睡眠品质。' },
-      { id: '3', text: '根据系统性评估，持续数周的正念冥想干预能够有效改善睡眠质量。' },
-    ];
-    setSuggestions(mockSuggestions);
+  const translationService = new TranslationService();
+
+  // Get previous sentence for context
+  const getPreviousSentence = (): string | undefined => {
+    const currentIdx = allSentences.findIndex(s => s.id === sentence.id);
+    return currentIdx > 0 ? allSentences[currentIdx - 1].sourceText : undefined;
   };
 
-  // Mock AI suggestions for sentence alternatives (when there's already translation)
-  const generateSentenceSuggestions = () => {
-    const mockSuggestions: Suggestion[] = [
-      { id: '1', text: '系统性评审指出，数周的正念冥想介入措施可以大幅改善睡眠品质。' },
-      { id: '2', text: '系统化评估证明，持续几周的静心冥想干预能够显著提高睡眠质量。' },
-      { id: '3', text: '根据系统性审查，若干周的正念练习干预能明显增强睡眠水平。' },
-    ];
-    setSuggestions(mockSuggestions);
+  // Get next sentence for context
+  const getNextSentence = (): string | undefined => {
+    const currentIdx = allSentences.findIndex(s => s.id === sentence.id);
+    return currentIdx < allSentences.length - 1
+      ? allSentences[currentIdx + 1].sourceText
+      : undefined;
+  };
+
+  // Generate AI translation suggestions
+  const generateInitialSuggestions = async () => {
+    setIsLoadingSuggestions(true);
+    setError(null);
+
+    try {
+      const suggestions = await translationService.generateTransSugg(
+        projectId,
+        sentence.sourceText,
+        getPreviousSentence(),
+        getNextSentence()
+      );
+      setSuggestions(suggestions);
+    } catch (err) {
+      console.error('Failed to generate suggestions:', err);
+      setError('Failed to generate translation suggestions. Please try again.');
+      setSuggestions([]);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  const generateSentenceSuggestions = async () => {
+    setIsLoadingSuggestions(true);
+    setError(null);
+
+    try {
+      const suggestions = await translationService.generateTransSugg(
+        projectId,
+        sentence.sourceText,
+        getPreviousSentence(),
+        getNextSentence()
+      );
+      setSuggestions(suggestions);
+    } catch (err) {
+      console.error('Failed to generate suggestions:', err);
+      setError('Failed to generate translation suggestions. Please try again.');
+      setSuggestions([]);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+    
     setShowSentenceSuggestions(true);
     setShowSegmentSelector(false);
   };
@@ -75,18 +122,18 @@ export function SentenceItem({ sentence, index, onUpdateTranslation }: SentenceI
 
     if (selected.length > 0) {
       setSelectedText(selected);
-      
+
       // Get positions relative to the container
       const containerRect = container.getBoundingClientRect();
       const textareaRect = textarea.getBoundingClientRect();
-      
+
       // Calculate approximate position based on selection
       const charsBeforeSelection = textarea.selectionStart;
       const lineHeight = 24; // approximate line height
       const charWidth = 8; // approximate char width
       const charsPerLine = Math.floor(textareaRect.width / charWidth);
       const lineNumber = Math.floor(charsBeforeSelection / charsPerLine);
-      
+
       setSelectionPosition({
         x: textareaRect.left - containerRect.left + 50,
         y: textareaRect.top - containerRect.top + (lineNumber * lineHeight) - 40
@@ -97,18 +144,12 @@ export function SentenceItem({ sentence, index, onUpdateTranslation }: SentenceI
     }
   };
 
-  const handleAddToTermBase = () => {
-    // Mock adding to term base
-    alert(`Added "${selectedText}" to term base`);
-    setSelectedText('');
-    setSelectionPosition(null);
-  };
-
-  const handleShowAlternativePhrasings = () => {
-    setShowSegmentSelector(!showSegmentSelector);
-    setShowSentenceSuggestions(false);
-    setSuggestions([]);
-  };
+  // const handleAddToTermBase = () => {
+  //   // Mock adding to term base
+  //   alert(`Added "${selectedText}" to term base`);
+  //   setSelectedText('');
+  //   setSelectionPosition(null);
+  // };
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm" ref={containerRef}>
@@ -122,8 +163,8 @@ export function SentenceItem({ sentence, index, onUpdateTranslation }: SentenceI
                 value={sentence.sourceText}
                 readOnly
                 onMouseUp={handleSourceTextSelect}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 resize-none overflow-hidden"
-                style={{ 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 resize-none overflow-y-auto max-h-[40vh]"
+                style={{
                   minHeight: '3rem',
                   height: 'auto'
                 }}
@@ -132,8 +173,8 @@ export function SentenceItem({ sentence, index, onUpdateTranslation }: SentenceI
                   e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
                 }}
               />
-              
-              {selectionPosition && selectedText && (
+
+              {/* {selectionPosition && selectedText && (
                 <div 
                   className="absolute z-10 bg-white border border-gray-300 rounded-lg shadow-lg p-2"
                   style={{ 
@@ -148,10 +189,10 @@ export function SentenceItem({ sentence, index, onUpdateTranslation }: SentenceI
                     Add to Term Base
                   </button>
                 </div>
-              )}
+              )} */}
             </div>
           </div>
-          
+
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="mt-1 text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0"
@@ -172,14 +213,33 @@ export function SentenceItem({ sentence, index, onUpdateTranslation }: SentenceI
                 {!translation && (
                   <button
                     onClick={generateInitialSuggestions}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#29bafe] text-white rounded-lg hover:bg-[#1da8ee] transition-colors text-sm"
+                    disabled={isLoadingSuggestions}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-white transition-colors ${isLoadingSuggestions
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-[#29bafe] hover:bg-[#1da8ee]'
+                      }`}
                   >
-                    <Sparkles className="w-4 h-4" />
-                    Generate Suggestions
+                    {isLoadingSuggestions ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        Generate Suggestions
+                      </>
+                    )}
                   </button>
                 )}
               </div>
-              
+
+              {error && (
+                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <textarea
                   value={translation}
@@ -190,11 +250,10 @@ export function SentenceItem({ sentence, index, onUpdateTranslation }: SentenceI
                 <button
                   onClick={handleMarkComplete}
                   disabled={!translation}
-                  className={`p-3 rounded-lg transition-colors ${
-                    translation
-                      ? 'bg-green-500 hover:bg-green-600 text-white'
-                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
+                  className={`p-3 rounded-lg transition-colors ${translation
+                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
                   title="Mark as complete"
                 >
                   <Check className="w-5 h-5" />
@@ -213,17 +272,42 @@ export function SentenceItem({ sentence, index, onUpdateTranslation }: SentenceI
                       Generate alternative sentence translations
                     </span>
                   </button>
-                  
-                  <button
-                    onClick={handleShowAlternativePhrasings}
-                    className="flex items-center gap-2 px-3 py-1 text-sm border border-gray-300 rounded-lg hover:border-[#29bafe] hover:text-[#29bafe] transition-colors group relative"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    <span className="text-xs">Alternative Phrasings</span>
-                    <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                      Generate alternative segments
-                    </span>
-                  </button>
+
+                  {!showSegmentSelector ? (
+                    <button
+                      onClick={() => {
+                        setShowSegmentSelector(true);
+                        setSegmentChunkKey(prev => prev + 1);
+                        setShowSentenceSuggestions(false);
+                        setSuggestions([]);
+                      }}
+                      className="flex items-center gap-2 px-3 py-1 text-sm border border-gray-300 rounded-lg hover:border-[#29bafe] hover:text-[#29bafe] transition-colors group relative"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span className="text-xs">Alternative Phrasings</span>
+                      <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                        Generate alternative segments
+                      </span>
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setSegmentChunkKey(prev => prev + 1)}
+                        className="flex items-center gap-2 px-3 py-1 text-sm border border-gray-300 rounded-lg hover:border-[#29bafe] hover:text-[#29bafe] transition-colors"
+                        title="Reset segments to individual tokens"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        <span className="text-xs">Reset</span>
+                      </button>
+                      <button
+                        onClick={() => setShowSegmentSelector(false)}
+                        className="flex items-center gap-1 px-2 py-1 text-sm border border-gray-300 rounded-lg hover:border-red-400 hover:text-red-400 transition-colors"
+                        title="Close segment editor"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -274,6 +358,8 @@ export function SentenceItem({ sentence, index, onUpdateTranslation }: SentenceI
               <SegmentSelector
                 translation={translation}
                 onUpdateTranslation={handleTranslationChange}
+                destinationLanguage={destinationLanguage}
+                chunkKey={segmentChunkKey}
               />
             )}
           </div>
