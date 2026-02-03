@@ -1,16 +1,29 @@
-import { ArrowLeft, FileText, Clock, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, FileText, Clock, Loader2, AlertCircle, Trash2 } from 'lucide-react';
 import type { Project } from '../types/translation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from './ui/alert-dialog';
+import { Button } from './ui/button';
 
 interface AllProjectsProps {
   projects: Project[];
   onBack: () => void;
   onSelectProject: (project: Project) => void;
+  onDeleteProject: (projectId: string) => Promise<void>;
   isLoading: boolean;
   error: string | null;
   onRetry: () => void;
 }
 
-export function AllProjects({ projects, onBack, onSelectProject, isLoading, error, onRetry }: AllProjectsProps) {
+export function AllProjects({ projects, onBack, onSelectProject, onDeleteProject, isLoading, error, onRetry }: AllProjectsProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -99,23 +112,55 @@ export function AllProjects({ projects, onBack, onSelectProject, isLoading, erro
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Clock className="w-4 h-4" />
-                      <span>Last edited {formatDate(project.lastEdit)}</span>
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Clock className="w-4 h-4" />
+                        <span>Last edited {formatDate(project.lastEdit)}</span>
+                      </div>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 h-auto transition-opacity"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-white">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Project</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{project.name}"? This action cannot be undone and will permanently remove all project files and translations.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-red-600 hover:bg-red-700 text-white"
+                                onClick={() => onDeleteProject(project.id)}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-4 pt-4 border-t border-gray-100">
+                  {/* <div className="mt-4 pt-4 border-t border-gray-100">
                     <div className="flex items-center justify-between text-sm">
                     </div>
                     <div className="mt-2 bg-gray-200 rounded-full h-2 overflow-hidden">
-                      {/* <div 
+                      <div 
                         className="bg-[#29bafe] h-full transition-all"
                         style={{ 
                           width: `${progressPercent}%` 
                         }}
-                      /> */}
+                      />
                     </div>
-                  </div>
+                  </div> */}
                 </button>
               );
             })}

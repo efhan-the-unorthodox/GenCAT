@@ -34,6 +34,9 @@ export function SentenceItem({ sentence, index, onUpdateTranslation, projectId, 
 
   const translationService = new TranslationService();
 
+  // Check if there are pending changes (confirmed sentence with local edits)
+  const hasPendingChanges = sentence.isComplete && translation !== (sentence.translation || '');
+
   // Get previous sentence for context
   const getPreviousSentence = (): string | undefined => {
     const currentIdx = allSentences.findIndex(s => s.id === sentence.id);
@@ -96,14 +99,22 @@ export function SentenceItem({ sentence, index, onUpdateTranslation, projectId, 
 
   const handleSelectSuggestion = (suggestionText: string) => {
     setTranslation(suggestionText);
-    onUpdateTranslation(suggestionText);
+    // Only sync to parent if not already complete
+    // If complete, keep original in consolidated until re-confirmed
+    if (!sentence.isComplete) {
+      onUpdateTranslation(suggestionText, false);
+    }
     setSuggestions([]);
     setShowSentenceSuggestions(false);
   };
 
   const handleTranslationChange = (newTranslation: string) => {
     setTranslation(newTranslation);
-    onUpdateTranslation(newTranslation);
+    // Only sync to parent if not already complete
+    // If complete, keep original in consolidated until re-confirmed
+    if (!sentence.isComplete) {
+      onUpdateTranslation(newTranslation, false);
+    }
   };
 
   const handleMarkComplete = () => {
@@ -215,7 +226,7 @@ export function SentenceItem({ sentence, index, onUpdateTranslation, projectId, 
                     onClick={generateInitialSuggestions}
                     disabled={isLoadingSuggestions}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-white transition-colors ${isLoadingSuggestions
-                      ? 'bg-gray-400 cursor-not-allowed'
+                      ? 'bg-slate-400 cursor-not-allowed'
                       : 'bg-[#29bafe] hover:bg-[#1da8ee]'
                       }`}
                   >
@@ -250,11 +261,14 @@ export function SentenceItem({ sentence, index, onUpdateTranslation, projectId, 
                 <button
                   onClick={handleMarkComplete}
                   disabled={!translation}
-                  className={`p-3 rounded-lg transition-colors ${translation
-                    ? 'bg-green-500 hover:bg-green-600 text-white'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    }`}
-                  title="Mark as complete"
+                  className={`p-3 rounded-lg transition-colors ${
+                    !translation
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : hasPendingChanges
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                        : 'bg-green-500 hover:bg-green-600 text-white'
+                  }`}
+                  title={hasPendingChanges ? "Confirm updated translation" : "Mark as complete"}
                 >
                   <Check className="w-5 h-5" />
                 </button>
@@ -284,7 +298,7 @@ export function SentenceItem({ sentence, index, onUpdateTranslation, projectId, 
                       className="flex items-center gap-2 px-3 py-1 text-sm border border-gray-300 rounded-lg hover:border-[#29bafe] hover:text-[#29bafe] transition-colors group relative"
                     >
                       <Sparkles className="w-4 h-4" />
-                      <span className="text-xs">Alternative Phrasings</span>
+                      <span className="text-xs">Sentence Chunking</span>
                       <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                         Generate alternative segments
                       </span>

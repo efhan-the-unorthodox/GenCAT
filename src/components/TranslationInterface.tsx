@@ -69,11 +69,11 @@ export function TranslationInterface({
               {project.sourceLanguage} → {project.destinationLanguage}
             </p>
           </div>
-          <div className="ml-auto flex items-center gap-3">
+          {/* <div className="ml-auto flex items-center gap-3">
             <button className="p-2 border border-gray-300 rounded-lg hover:border-[#29bafe] hover:text-[#29bafe] transition-colors" title="Term Base">
               <BookOpen className="w-5 h-5" />
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
 

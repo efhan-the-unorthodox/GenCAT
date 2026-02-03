@@ -228,7 +228,7 @@ export function NewProjectDialog({
             </div>
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-sm mb-2">
               Upload Term Base <span className="text-gray-500">(Optional)</span>
             </label>
@@ -259,7 +259,7 @@ export function NewProjectDialog({
                 className="hidden"
               />
             </div>
-          </div>
+          </div> */}
 
           <div className="flex justify-end gap-3 pt-4">
             <button

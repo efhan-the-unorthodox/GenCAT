@@ -23,4 +23,12 @@ export class ProjectService {
     });
     return response.data;
   }
+
+  async deleteProject(id: string): Promise<{ status: string; project_id: string }> {
+    const response = await this.client.post<{ status: string; project_id: string }>(
+      "/delete_project",
+      { project_id: id }
+    );
+    return response.data;
+  }
 }

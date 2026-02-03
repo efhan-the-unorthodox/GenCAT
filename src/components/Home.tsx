@@ -21,14 +21,15 @@ export function Home({
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
       <div className="text-center mb-12">
-        <img src="/GenCAT Logo.png" alt="GenCAT" className="h-16 sm:h-20 md:h-24 lg:h-28 mx-auto mb-4" />
+        <img src="/GenCAT Logo.png" alt="GenCAT" className="h-16 sm:h-18 md:h-24 lg:h-28 mx-auto mb-15" />
         {/* <p className="text-gray-600">Computer Assisted Translation (CAT) utilizing a Generative Search-Based Paradigm made possible with LLMs
         </p> */}
-        <h2 className="text-black-600">A Generative Search-Based Paradigm Computer Assisted Translation Tool.
-        </h2>
-        <p>
-          Human made, AI powered, Designed for Human-AI collatboration.
+        <p className="text-2xl text-black-600">
+          A Generative Paradigm Computer Assisted Translator
         </p>
+        <text className='text-lg'>
+          Human made, AI powered, designed for Human-AI collaboration.
+        </text>
       </div>
 
       <div className="flex flex-col gap-4 w-full max-w-md">
@@ -46,11 +47,11 @@ export function Home({
         >
           <FolderOpen className="w-5 h-5" />
           All Projects
-          {projects.length > 0 && (
+          {/* {projects.length > 0 && (
             <span className="bg-gray-200 px-2 py-1 rounded-full text-sm">
               {projects.length}
             </span>
-          )}
+          )} */}
         </button>
 
       </div>

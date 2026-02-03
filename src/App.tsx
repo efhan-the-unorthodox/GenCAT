@@ -76,6 +76,15 @@ export default function App() {
     setCurrentView('allProjects');
   };
 
+  const handleDeleteProject = async (projectId: string) => {
+    try {
+      await projectService.deleteProject(projectId);
+      await fetchProjects();
+    } catch (err) {
+      console.error('Failed to delete project:', err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50">
       {currentView === 'home' && (
@@ -91,6 +100,7 @@ export default function App() {
           projects={projects}
           onBack={handleBackToHome}
           onSelectProject={handleSelectProject}
+          onDeleteProject={handleDeleteProject}
           isLoading={isLoadingProjects}
           error={projectsError}
           onRetry={fetchProjects}

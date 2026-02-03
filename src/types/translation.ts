@@ -13,6 +13,7 @@ export interface LanguageOption {
 export const LANGUAGE_OPTIONS: LanguageOption[] = [
   { code: 'en', label: 'English' },
   { code: 'zh-CN', label: 'Chinese (Simplified)' },
+  { code: 'ja', label: 'Japanese' },
 ];
 
 export interface Project {
