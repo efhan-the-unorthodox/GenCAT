@@ -1,73 +1,82 @@
-# React + TypeScript + Vite
+# GenCAT - Generative Computer-Assisted Translation
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A human-centered translation interface powered by generative AI and LLMs, shifting the paradigm from traditional match-based systems to a dynamic, search-based approach.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+GenCAT proposes a new approach to translation tools by shifting from traditional **match-based systems** (which retrieve and edit past translations) to a **search-based, generative paradigm** powered by Large Language Models (LLMs).
 
-## React Compiler
+### The Problem with Traditional Interfaces
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Current translation interfaces limit translator control, interaction, and creativity by:
+- Providing only a single suggestion
+- Enforcing rigid, one-directional workflows
+- Restricting opportunities for creative translation decisions
 
-## Expanding the ESLint configuration
+### The GenCAT Solution
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+GenCAT introduces a **human-centered interface design** where translators:
+- **Actively guide** the translation process
+- **Interact with multiple** generated translation options
+- **Explore solutions** in a dynamic, bidirectional manner
+- **Maintain creative control** over both process and output
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Key Features
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **Generative Translation**: LLM-powered suggestions instead of database lookups
+- **Multi-Option Interface**: Compare and select from multiple translation candidates
+- **Bidirectional Workflow**: Seamless back-and-forth interaction between translator and AI
+- **Human-Centered Design**: Prioritizes translator agency and control
+- **Deep AI Collaboration**: Enhanced human–AI partnership for professional translation work
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Tech Stack
+
+- **Frontend**: React + TypeScript + Vite
+- **Styling**: CSS
+- **Development**: ESLint for code quality
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v18 or higher recommended)
+- npm or yarn
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/efhan-the-unorthodox/GenCAT.git
+cd GenCAT
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Build for Production
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
 ```
+
+## Project Structure
+
+The project is built as a modern web application using React and TypeScript for type safety and maintainability.
+
+## Vision
+
+GenCAT represents a paradigm shift in computer-assisted translation—from passive suggestion systems to active, collaborative environments where human translators and AI work together to produce better, more nuanced translations while maintaining full control over the creative process.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues and pull requests.
+
+## License
+
+[Add your license here]
+
+---
+
+**Note**: This project is based on research into search-based paradigm translation with generative AI assistance.
