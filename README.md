@@ -73,10 +73,6 @@ GenCAT represents a paradigm shift in computer-assisted translation—from passi
 
 Contributions are welcome! Please feel free to submit issues and pull requests.
 
-## License
-
-[Add your license here]
-
 ---
 
 **Note**: This project is based on research into search-based paradigm translation with generative AI assistance.
